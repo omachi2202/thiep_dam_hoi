@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thiệp Mời Đính Hôn</title>
+    <!-- Tích hợp Font chữ cao cấp từ Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Montserrat:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --burgundy: #722F37;
+            /* Đỏ mận sang trọng */
+            --burgundy-dark: #4A1A22;
+            --gold: #D4AF37;
+            /* Vàng Gold */
+            --white: #FFFFFF;
+            --bg-color: #1a1a1a;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Montserrat', sans-serif;
+            display: flex;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Khung hiển thị chuẩn Mobile */
+        .mobile-app-container {
+            width: 100%;
+            max-width: 480px;
+            /* Giới hạn chiều rộng trên PC để giữ form mobile */
+            min-height: 100vh;
+            background-color: var(--burgundy);
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            /* Ẩn cuộn ban đầu khi chưa mở thư */
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        /* ================= CƠ CHẾ PHONG BÌ ================= */
+        .envelope-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--burgundy-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            transition: transform 1.2s cubic-bezier(0.77, 0, 0.175, 1), opacity 1s ease;
+        }
+
+        .envelope {
+            position: relative;
+            width: 90%;
+            aspect-ratio: 4/3;
+            background-color: var(--burgundy);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        /* Nắp trên của phong bì */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background-color: var(--burgundy);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            transform-origin: top;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 4;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        }
+
+        /* Phần túi dưới của phong bì */
+        .envelope-pocket {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--burgundy);
+            clip-path: polygon(0 100%, 100% 100%, 100% 40%, 50% 70%, 0 40%);
+            z-index: 3;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Dấu sáp */
+        .wax-seal {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #e6c875 0%, #D4AF37 50%, #aa8529 100%);
+            border-radius: 50%;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            color: var(--burgundy);
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            transition: opacity 0.3s;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7);
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1.05);
+                box-shadow: 0 0 0 15px rgba(212, 175, 55, 0);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 0 0 rgba(212, 175, 55, 0);
+            }
+        }
+
+        /* Trạng thái mở */
+        .envelope-overlay.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        .envelope-overlay.open .wax-seal {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* ================= NỘI DUNG THIỆP MỜI ================= */
+        .invitation-card {
+            padding: 25px 20px;
+            color: var(--white);
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 1s ease, transform 1s ease;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        .invitation-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Đường cắt viền trắng chứa text (Die-cut style) */
+        .die-cut-white-border {
+            border: 2px solid var(--white);
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            position: relative;
+            background-color: transparent;
+        }
+
+        /* Hoa văn góc (tuỳ chọn thêm cho phong cách truyền thống) */
+        .die-cut-white-border::before,
+        .die-cut-white-border::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gold);
+        }
+
+        .die-cut-white-border::before {
+            top: 10px;
+            left: 10px;
+            border-right: none;
+            border-bottom: none;
+        }
+
+        .die-cut-white-border::after {
+            bottom: 10px;
+            right: 10px;
+            border-left: none;
+            border-top: none;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin: 0 0 20px 0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .intro-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-style: italic;
+            color: var(--white);
+        }
+
+        .couple-photo-wrapper {
+            width: 100%;
+            margin: 25px 0;
+            padding: 5px;
+            border: 1px solid var(--gold);
+            border-radius: 200px 200px 0 0;
+            /* Dạng vòm (Arch) hiện đại */
+            box-sizing: border-box;
+        }
+
+        .slideshow {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3/4;
+            border-radius: 200px 200px 0 0;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            border-radius: 200px 200px 0 0;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .names {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--gold);
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+
+        .names span {
+            display: block;
+            font-size: 1rem;
+            color: var(--white);
+            font-family: 'Montserrat', sans-serif;
+            margin: 5px 0;
+        }
+
+        .details-box {
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 20px 0;
+            margin: 25px 0;
+        }
+
+        .details-box p {
+            margin: 8px 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .rsvp-section h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--gold);
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto;
+            border: 5px solid var(--white);
+            border-radius: 8px;
+            display: block;
+            background: var(--white);
+        }
+
+        .qr-note {
+            font-size: 0.8rem;
+            margin-top: 15px;
+            opacity: 0.8;
+        }
+
+        /* ================= HIỆU ỨNG HOA RƠI VÀ NHẠC ================= */
+        .petal {
+            position: fixed;
+            top: -10%;
+            z-index: 999;
+            pointer-events: none;
+            user-select: none;
+            font-size: 1.5rem;
+            animation-name: fall, sway;
+            animation-timing-function: linear, ease-in-out;
+            animation-iteration-count: 1, infinite;
+            animation-direction: normal, alternate;
+        }
+
+        @keyframes fall {
+            0% {
+                top: -10%;
+                opacity: 1;
+            }
+
+            100% {
+                top: 110%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes sway {
+            0% {
+                transform: translateX(0px) rotate(0deg);
+            }
+
+            100% {
+                transform: translateX(30px) rotate(45deg);
+            }
+        }
+
+        #music-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(212, 175, 55, 0.9);
+            color: var(--burgundy);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+            font-size: 1.2rem;
+        }
+
+        #music-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        #music-toggle.playing {
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="mobile-app-container" id="main-container">
+
+        <!-- Audio -->
+        <audio id="bg-music" loop>
+            <!-- THAY ĐỔI LINK NHẠC CỦA BẠN VÀO ĐÂY (src) -->
+            <source src="am_thanh_thiep_cuoi.mp3" type="audio/mpeg">
+        </audio>
+
+        <!-- Nút bật/tắt nhạc -->
+        <div id="music-toggle" onclick="toggleMusic()">
+            🎵
+        </div>
+
+        <!-- 1. GIAO DIỆN PHONG BÌ -->
+        <div class="envelope-overlay" id="envelope-overlay">
+            <div class="envelope">
+                <div class="envelope-flap"></div>
+                <div class="envelope-pocket"></div>
+                <!-- Nút nhấn mở thiệp -->
+                <div class="wax-seal" onclick="openInvitation()">MỞ</div>
+            </div>
+        </div>
+
+        <!-- 2. NỘI DUNG THIỆP CHÍNH -->
+        <div class="invitation-card" id="invitation-card">
+
+            <!-- YÊU CẦU: CÁC CHỮ PHẢI NẰM TRONG ĐƯỜNG CẮT VIỀN TRẮNG -->
+            <div class="die-cut-white-border">
+
+                <h1>Lễ Đính Hôn</h1>
+
+                <!-- Đoạn giới thiệu 1 (Placeholder) -->
+                <p class="intro-text">"Tình yêu không phải là nhìn chằm chằm vào nhau, mà là cùng nhau nhìn về một
+                    hướng."</p>
+
+                <!-- Hình ảnh Cô Dâu Chú Rể (Placeholder) -->
+                <div class="couple-photo-wrapper">
+                    <div class="slideshow">
+                        <!-- THÊM ẢNH Ở ĐÂY: Có thể copy dòng dưới để thêm bao nhiêu ảnh tuỳ thích -->
+                        <img src="6h5_thiep_dam_hoi.jpg" class="slide active">
+                        <img src="h4_thiep_dam_hoi.jpg" class="slide">
+                        <img src="h2_thiep_dam_hoi.jpg" class="slide">
+                    </div>
+                </div>
+
+                <!-- Đoạn giới thiệu 2 (Placeholder) -->
+                <p class="intro-text">
+                    Sự hiện diện của quý vị là niềm vinh hạnh và lời chúc phúc lớn lao nhất dành cho gia đình chúng tôi
+                    trong ngày vui này.
+                </p>
+
+                <div class="names">
+                    <span>Út Nữ</span>
+                    TRẦN THỊ XUÂN MAI
+                    <span>&</span>
+                    ĐẶNG KHÁNH DƯ
+                    <span>Trưởng Nam</span>
+                </div>
+
+                <!-- Thông tin chi tiết -->
+                <div class="details-box">
+                    <p style="color: var(--gold); font-weight: 500;">Chủ nhật, Ngày 02 tháng 08 năm 2026</p>
+                    <p>Vào lúc 11:00 Sáng</p>
+                    <p>Tại tư gia: Số 19 Đường Số 22, Khu phố Ninh Lợi, Phường Ninh Thạnh, Tỉnh Tây Ninh</p>
+                </div>
+
+                <!-- RSVP và Mã QR -->
+                <div class="rsvp-section">
+                    <h2>Mã QRcode Google Maps</h2>
+                    <img src="qrcode.png" alt="Mã QR" class="qr-code">
+                    <p class="qr-note">Vui lòng quét mã QR để định vị trên Google Maps</p>
+                </div>
+
+            </div> <!-- Kết thúc viền trắng -->
+        </div>
+
+    </div>
+
+    <script>
+        function openInvitation() {
+            const envelope = document.getElementById('envelope-overlay');
+            const card = document.getElementById('invitation-card');
+            const container = document.getElementById('main-container');
+            const musicToggle = document.getElementById('music-toggle');
+            const bgMusic = document.getElementById('bg-music');
+
+            // Bước 1: Kích hoạt hiệu ứng lật nắp phong bì
+            envelope.classList.add('open');
+
+            // Cài đặt thời gian bắt đầu của nhạc (tính bằng giây). Ví dụ muốn bắt đầu ở giây 30 thì sửa thành bgMusic.currentTime = 30;
+            bgMusic.currentTime = 77;
+
+            // Khởi động slideshow ảnh
+            startSlideshow();
+
+            // Play nhạc nền khi click mở thiệp (Trình duyệt yêu cầu tương tác)
+            bgMusic.play().then(() => {
+                musicToggle.style.display = 'flex';
+                musicToggle.classList.add('playing');
+            }).catch(e => {
+                console.log("Trình duyệt chặn autoplay audio, cần user click lại");
+                musicToggle.style.display = 'flex';
+            });
+
+            // Bắt đầu thả hoa
+            startFallingPetals();
+
+            // Bước 2: Chờ nắp mở xong, kéo phong bì biến mất lên trên
+            setTimeout(() => {
+                envelope.style.transform = 'translateY(-120%)';
+                envelope.style.opacity = '0';
+
+                // Bật scroll cho container
+                container.style.overflowY = 'auto';
+
+                // Hiển thị và làm mượt sự xuất hiện của thiệp
+                setTimeout(() => {
+                    card.classList.add('show');
+
+                    // Xoá hẳn phong bì khỏi DOM sau khi animation kết thúc để không cản trở click
+                    setTimeout(() => {
+                        envelope.style.display = 'none';
+                    }, 1000);
+
+                }, 500);
+
+            }, 800); // Khớp với thời gian CSS transition của envelope-flap
+        }
+
+        // Logic bật/tắt nhạc
+        function toggleMusic() {
+            const bgMusic = document.getElementById('bg-music');
+            const musicToggle = document.getElementById('music-toggle');
+            if (bgMusic.paused) {
+                bgMusic.play();
+                musicToggle.classList.add('playing');
+            } else {
+                bgMusic.pause();
+                musicToggle.classList.remove('playing');
+            }
+        }
+
+        // Logic slideshow ảnh
+        function startSlideshow() {
+            let currentSlide = 0;
+            const slides = document.querySelectorAll('.slide');
+            if (slides.length > 1) {
+                setInterval(() => {
+                    slides[currentSlide].classList.remove('active');
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    slides[currentSlide].classList.add('active');
+                }, 3000); // 3000 = Đổi ảnh mỗi 3 giây
+            }
+        }
+
+        // Hiệu ứng hoa rơi
+        function startFallingPetals() {
+            const petals = ['🌸', '🌺', '💮', '🏵️']; // Các icon hoa
+            setInterval(() => {
+                const petal = document.createElement('div');
+                petal.classList.add('petal');
+                petal.innerText = petals[Math.floor(Math.random() * petals.length)];
+
+                // Random vị trí ngang và thời gian rơi
+                petal.style.left = Math.random() * 100 + 'vw';
+                petal.style.animationDuration = (Math.random() * 3 + 4) + 's, ' + (Math.random() * 2 + 2) + 's'; // fall, sway
+
+                document.body.appendChild(petal);
+
+                // Xoá phần tử sau khi rơi xong
+                setTimeout(() => {
+                    petal.remove();
+                }, 8000);
+            }, 400); // Tốc độ tạo hoa: 400ms 1 bông
+        }
+    </script>
+
+</body>
+
+</html>
